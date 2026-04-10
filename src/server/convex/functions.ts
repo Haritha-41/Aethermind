@@ -1,0 +1,35 @@
+export const convexFunctions = {
+  users: {
+    createUser: "users:createUser",
+    getUserByEmail: "users:getUserByEmail",
+    getUserByEmailWithPassword: "users:getUserByEmailWithPassword",
+    getUserById: "users:getUserById",
+  },
+  ai: {
+    generateTextWithGemini: "ai:generateTextWithGemini",
+    generateImageWithGemini: "ai:generateImageWithGemini",
+    generateCodeWithGemini: "ai:generateCodeWithGemini",
+    generateVideoWithGemini: "ai:generateVideoWithGemini",
+    generateConversationReplyWithGemini: "ai:generateConversationReplyWithGemini",
+    listGenerationsByUser: "ai:listGenerationsByUser",
+    listGenerationsByUserAndKind: "ai:listGenerationsByUserAndKind",
+    listImageGenerationsByUser: "ai:listImageGenerationsByUser",
+    getImageStorageUrl: "ai:getImageStorageUrl",
+    recordGeneration: "ai:recordGeneration",
+  },
+  billing: {
+    seedDefaultPlans: "billing:seedDefaultPlans",
+    listPlans: "billing:listPlans",
+    getCurrentUserPlan: "billing:getCurrentUserPlan",
+    setUserPlan: "billing:setUserPlan",
+    grantAdminRole: "billing:grantAdminRole",
+    revokeAdminRole: "billing:revokeAdminRole",
+    getUsageSummary: "billing:getUsageSummary",
+    trackUsageAndEnforcePlan: "billing:trackUsageAndEnforcePlan",
+  },
+  admin: {
+    getDashboardSnapshot: "admin:getDashboardSnapshot",
+    setUserAccountStatus: "admin:setUserAccountStatus",
+    setUserPlanAsAdmin: "admin:setUserPlanAsAdmin",
+  },
+} as const;
