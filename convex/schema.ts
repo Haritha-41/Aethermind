@@ -51,6 +51,7 @@ export default defineSchema({
   generations: defineTable({
     userId: v.id("users"),
     kind: v.string(),
+    sessionId: v.optional(v.id("aiSessions")),
     prompt: v.string(),
     output: v.string(),
     model: v.string(),
@@ -61,8 +62,21 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_created_at", ["userId", "createdAt"])
     .index("by_user_kind_created_at", ["userId", "kind", "createdAt"])
+    .index("by_user_kind_session_created_at", ["userId", "kind", "sessionId", "createdAt"])
+    .index("by_session_created_at", ["sessionId", "createdAt"])
     .index("by_created_at", ["createdAt"])
     .index("by_kind_created_at", ["kind", "createdAt"]),
+
+  aiSessions: defineTable({
+    userId: v.id("users"),
+    kind: v.string(),
+    title: v.string(),
+    createdAt: v.number(),
+    lastActivityAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_kind_last_activity_at", ["userId", "kind", "lastActivityAt"])
+    .index("by_user_kind_created_at", ["userId", "kind", "createdAt"]),
 
   usageEvents: defineTable({
     userId: v.id("users"),

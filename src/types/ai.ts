@@ -14,36 +14,20 @@ export type AiUsageDto = {
   periodEndMs: number;
 };
 
-export type TextUsageDto = AiUsageDto;
+export type AiSessionKind = "code" | "conversation";
+
+export type AiSessionDto = {
+  id: string;
+  kind: AiSessionKind;
+  title: string;
+  createdAt: number;
+  lastActivityAt: number;
+};
+
 export type ImageUsageDto = AiUsageDto;
 export type CodeUsageDto = AiUsageDto;
 export type VideoUsageDto = AiUsageDto;
 export type ConversationUsageDto = AiUsageDto;
-
-export type TextGenerationHistoryItemDto = {
-  id: string;
-  prompt: string;
-  output: string;
-  model: string;
-  tokensUsed: number | null;
-  createdAt: number;
-};
-
-export type TextGenerationResultDto = {
-  model: string;
-  output: string;
-  tokensUsed: number;
-};
-
-export type TextGenerationResponseDto = {
-  generation: TextGenerationResultDto;
-  usage: TextUsageDto;
-};
-
-export type TextHistoryResponseDto = {
-  history: TextGenerationHistoryItemDto[];
-  usage: TextUsageDto;
-};
 
 export type ImageGenerationHistoryItemDto = {
   id: string;
@@ -74,6 +58,7 @@ export type ImageHistoryResponseDto = {
 
 export type CodeGenerationHistoryItemDto = {
   id: string;
+  sessionId: string | null;
   prompt: string;
   output: string;
   model: string;
@@ -82,6 +67,7 @@ export type CodeGenerationHistoryItemDto = {
 };
 
 export type CodeGenerationResultDto = {
+  sessionId: string;
   model: string;
   output: string;
   tokensUsed: number;
@@ -93,8 +79,25 @@ export type CodeGenerationResponseDto = {
 };
 
 export type CodeHistoryResponseDto = {
+  sessionId: string | null;
   history: CodeGenerationHistoryItemDto[];
   usage: CodeUsageDto;
+};
+
+export type CodeSessionsResponseDto = {
+  sessions: AiSessionDto[];
+};
+
+export type CodeCreateSessionResponseDto = {
+  session: AiSessionDto;
+};
+
+export type CodeUpdateSessionResponseDto = {
+  session: AiSessionDto;
+};
+
+export type SessionDeleteResponseDto = {
+  success: boolean;
 };
 
 export type VideoGenerationHistoryItemDto = {
@@ -102,6 +105,7 @@ export type VideoGenerationHistoryItemDto = {
   prompt: string;
   output: string;
   model: string;
+  videoUrl: string | null;
   tokensUsed: number | null;
   createdAt: number;
 };
@@ -109,6 +113,7 @@ export type VideoGenerationHistoryItemDto = {
 export type VideoGenerationResultDto = {
   model: string;
   output: string;
+  videoUrl?: string | null;
   tokensUsed: number;
 };
 
@@ -124,6 +129,7 @@ export type VideoHistoryResponseDto = {
 
 export type ConversationHistoryItemDto = {
   id: string;
+  sessionId: string | null;
   prompt: string;
   output: string;
   model: string;
@@ -132,6 +138,7 @@ export type ConversationHistoryItemDto = {
 };
 
 export type ConversationGenerationResultDto = {
+  sessionId: string;
   model: string;
   output: string;
   tokensUsed: number;
@@ -143,8 +150,50 @@ export type ConversationResponseDto = {
 };
 
 export type ConversationHistoryResponseDto = {
+  sessionId: string | null;
   history: ConversationHistoryItemDto[];
   usage: ConversationUsageDto;
+};
+
+export type ConversationSessionsResponseDto = {
+  sessions: AiSessionDto[];
+};
+
+export type ConversationCreateSessionResponseDto = {
+  session: AiSessionDto;
+};
+
+export type ConversationUpdateSessionResponseDto = {
+  session: AiSessionDto;
+};
+
+export type AudioUsageDto = AiUsageDto;
+
+export type AudioGenerationHistoryItemDto = {
+  id: string;
+  prompt: string;
+  output: string;
+  model: string;
+  audioUrl: string | null;
+  tokensUsed: number | null;
+  createdAt: number;
+};
+
+export type AudioGenerationResultDto = {
+  model: string;
+  output: string;
+  audioUrl?: string | null;
+  tokensUsed: number;
+};
+
+export type AudioGenerationResponseDto = {
+  generation: AudioGenerationResultDto;
+  usage: AudioUsageDto;
+};
+
+export type AudioHistoryResponseDto = {
+  history: AudioGenerationHistoryItemDto[];
+  usage: AudioUsageDto;
 };
 
 export type AiErrorDto = {

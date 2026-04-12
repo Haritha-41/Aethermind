@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { LogoutButton } from "@/features/auth/components/logout-button";
+import { getCurrentUser } from "@/server/services/auth/current-user";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await getCurrentUser();
+  const isAuthenticated = Boolean(user);
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0b0e14] text-slate-100">
       <div className="pointer-events-none absolute inset-0">
@@ -17,20 +22,32 @@ export default function HomePage() {
             <span className="text-xl font-bold tracking-tight">Aethermind</span>
           </Link>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="rounded-lg border border-[#2d333b] bg-[#171b25] px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-[#3d4450] hover:text-white"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-[#14b8a6] px-4 py-2 text-sm font-semibold text-[#0f1115] transition hover:bg-[#2dd4bf]"
-            >
-              Register
-            </Link>
-          </div>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="rounded-lg border border-[#2d333b] bg-[#171b25] px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-[#3d4450] hover:text-white"
+              >
+                Dashboard
+              </Link>
+              <LogoutButton variant="dark" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/login"
+                className="rounded-lg border border-[#2d333b] bg-[#171b25] px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-[#3d4450] hover:text-white"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-lg bg-[#14b8a6] px-4 py-2 text-sm font-semibold text-[#0f1115] transition hover:bg-[#2dd4bf]"
+              >
+                Register
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
@@ -41,11 +58,11 @@ export default function HomePage() {
             Build, manage, and scale AI workflows in one secure workspace.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
-            Aethermind unifies text, code, image, video, and conversation tools with account-level
+            Aethermind unifies code, audio, image, video, and conversation tools with account-level
             history and usage tracking built for a real SaaS product.
           </p>
           <Link
-            href="/signup"
+            href={isAuthenticated ? "/dashboard" : "/signup"}
             className="mt-10 inline-flex h-12 items-center justify-center rounded-lg bg-[#14b8a6] px-8 text-base font-semibold text-[#0f1115] transition hover:bg-[#2dd4bf]"
           >
             Get started

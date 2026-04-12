@@ -14,6 +14,7 @@ import {
   getUsageForUser,
   toAiServiceError,
   toConvexActionReference,
+  toConvexMutationReference,
   toConvexQueryReference,
 } from "./shared";
 
@@ -24,7 +25,12 @@ type ImageActionResult = {
   output: string;
   tokensUsed: number;
   imageStorageId: string;
+  generatedCount?: number;
 };
+
+function shouldUseReplicateImageModel(modelInput: string | undefined): boolean {
+  return modelInput?.trim().toLowerCase().startsWith("replicate-") ?? false;
+}
 
 export async function listImageHistoryForUser(
   userId: string,
@@ -64,13 +70,20 @@ export async function generateImageForUser(
   const serverAccessKey = getConvexServerAccessKey();
 
   try {
+    const useReplicate = shouldUseReplicateImageModel(input.model);
+    const actionRef = useReplicate
+      ? convexFunctions.ai.generateImageWithReplicate
+      : convexFunctions.ai.generateImageWithGemini;
     const actionResult = (await convexClient.action(
-      toConvexActionReference(convexFunctions.ai.generateImageWithGemini),
+      toConvexActionReference(actionRef),
       {
         serverAccessKey,
         userId,
         prompt: input.prompt,
         model: input.model,
+        style: input.style,
+        aspectRatio: input.aspectRatio,
+        numImages: input.numImages,
       },
     )) as ImageActionResult;
 
@@ -84,6 +97,9 @@ export async function generateImageForUser(
       userId,
       model: actionResult.model,
       hasImageUrl: Boolean(imageUrl),
+      style: input.style ?? "Photorealistic",
+      aspectRatio: input.aspectRatio ?? "1:1",
+      generatedCount: actionResult.generatedCount ?? 1,
       tokensUsed: actionResult.tokensUsed,
     });
 
@@ -98,10 +114,39 @@ export async function generateImageForUser(
     };
   } catch (error) {
     const serviceError = toAiServiceError(error, {
-      modelSuggestion: "gemini-2.5-flash-image",
+      modelSuggestion: shouldUseReplicateImageModel(input.model)
+        ? "replicate-image"
+        : "gemini-2.5-flash-image",
     });
     logger.warn("ai.image.generation.failed", {
       userId,
+      code: serviceError.code,
+      statusCode: serviceError.statusCode,
+    });
+    throw serviceError;
+  }
+}
+
+export async function deleteImageGenerationForUser(
+  userId: string,
+  generationId: string,
+): Promise<void> {
+  const convexClient = getConvexClient();
+  const serverAccessKey = getConvexServerAccessKey();
+
+  try {
+    await convexClient.mutation(toConvexMutationReference(convexFunctions.ai.deleteGeneration), {
+      serverAccessKey,
+      userId,
+      kind: "image",
+      generationId,
+    });
+    logger.info("ai.image.generation.deleted", { userId, generationId });
+  } catch (error) {
+    const serviceError = toAiServiceError(error);
+    logger.warn("ai.image.generation.delete_failed", {
+      userId,
+      generationId,
       code: serviceError.code,
       statusCode: serviceError.statusCode,
     });

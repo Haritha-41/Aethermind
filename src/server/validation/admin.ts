@@ -3,7 +3,7 @@ import { z } from "zod";
 export const adminDashboardQuerySchema = z.object({
   days: z.coerce.number().int().min(1).max(365).default(30),
   generationKind: z
-    .enum(["all", "text", "image", "code", "video", "conversation"])
+    .enum(["all", "image", "code", "video", "audio", "conversation"])
     .default("all"),
 });
 

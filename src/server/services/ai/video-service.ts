@@ -14,10 +14,22 @@ import {
   getUsageForUser,
   toAiServiceError,
   toConvexActionReference,
+  toConvexMutationReference,
   toConvexQueryReference,
 } from "./shared";
 
 export { AiServiceError } from "./shared";
+
+function shouldUseReplicateVideoModel(modelInput: string | undefined): boolean {
+  return modelInput?.trim().toLowerCase().startsWith("replicate-") ?? false;
+}
+
+type VideoActionResult = {
+  model: string;
+  output: string;
+  tokensUsed: number;
+  imageStorageId?: string;
+};
 
 export async function listVideoHistoryForUser(
   userId: string,
@@ -30,21 +42,21 @@ export async function listVideoHistoryForUser(
   const serverAccessKey = getConvexServerAccessKey();
   const [history, usage] = (await Promise.all([
     convexClient.query(
-      toConvexQueryReference(convexFunctions.ai.listGenerationsByUserAndKind),
+      toConvexQueryReference(convexFunctions.ai.listVideoGenerationsByUser),
       {
         serverAccessKey,
         userId,
-        kind: "video",
         limit,
       },
     ),
     getUsageForUser(userId),
   ])) as [
     Array<{
-      _id: string;
+      id: string;
       prompt: string;
       output: string;
       model: string;
+      videoUrl: string | null;
       tokensUsed?: number;
       createdAt: number;
     }>,
@@ -53,10 +65,11 @@ export async function listVideoHistoryForUser(
 
   return {
     history: history.map((item) => ({
-      id: item._id,
+      id: item.id,
       prompt: item.prompt,
       output: item.output,
       model: item.model,
+      videoUrl: item.videoUrl,
       tokensUsed: item.tokensUsed ?? null,
       createdAt: item.createdAt,
     })),
@@ -75,20 +88,41 @@ export async function generateVideoForUser(
   const serverAccessKey = getConvexServerAccessKey();
 
   try {
-    const generation = (await convexClient.action(
-      toConvexActionReference(convexFunctions.ai.generateVideoWithGemini),
+    const useReplicate = shouldUseReplicateVideoModel(input.model);
+    const actionRef = useReplicate
+      ? convexFunctions.ai.generateVideoWithReplicate
+      : convexFunctions.ai.generateVideoWithGemini;
+    const actionResult = (await convexClient.action(
+      toConvexActionReference(actionRef),
       {
         serverAccessKey,
         userId,
         prompt: input.prompt,
         model: input.model,
+        aspectRatio: input.aspectRatio,
       },
-    )) as VideoGenerationResultDto;
+    )) as VideoActionResult;
+
+    const videoUrl =
+      actionResult.imageStorageId
+        ? ((await convexClient.query(
+            toConvexQueryReference(convexFunctions.ai.getImageStorageUrl),
+            { serverAccessKey, storageId: actionResult.imageStorageId },
+          )) as string | null)
+        : null;
+
+    const generation: VideoGenerationResultDto = {
+      model: actionResult.model,
+      output: actionResult.output,
+      tokensUsed: actionResult.tokensUsed,
+      videoUrl,
+    };
 
     const usage = await getUsageForUser(userId);
     logger.info("ai.video.generation.success", {
       userId,
       model: generation.model,
+      aspectRatio: input.aspectRatio ?? "16:9",
       outputLength: generation.output.length,
       tokensUsed: generation.tokensUsed,
     });
@@ -99,10 +133,39 @@ export async function generateVideoForUser(
     };
   } catch (error) {
     const serviceError = toAiServiceError(error, {
-      modelSuggestion: "gemini-2.5-flash",
+      modelSuggestion: shouldUseReplicateVideoModel(input.model)
+        ? "replicate-video"
+        : "gemini-2.5-flash",
     });
     logger.warn("ai.video.generation.failed", {
       userId,
+      code: serviceError.code,
+      statusCode: serviceError.statusCode,
+    });
+    throw serviceError;
+  }
+}
+
+export async function deleteVideoGenerationForUser(
+  userId: string,
+  generationId: string,
+): Promise<void> {
+  const convexClient = getConvexClient();
+  const serverAccessKey = getConvexServerAccessKey();
+
+  try {
+    await convexClient.mutation(toConvexMutationReference(convexFunctions.ai.deleteGeneration), {
+      serverAccessKey,
+      userId,
+      kind: "video",
+      generationId,
+    });
+    logger.info("ai.video.generation.deleted", { userId, generationId });
+  } catch (error) {
+    const serviceError = toAiServiceError(error);
+    logger.warn("ai.video.generation.delete_failed", {
+      userId,
+      generationId,
       code: serviceError.code,
       statusCode: serviceError.statusCode,
     });

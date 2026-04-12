@@ -1,15 +1,15 @@
 export type DashboardSectionKey =
   | "dashboard"
-  | "text"
   | "code"
+  | "audio"
   | "image"
   | "video"
   | "conversation";
 
 export type DashboardIconName =
   | "dashboard"
-  | "text"
   | "code"
+  | "audio"
   | "image"
   | "video"
   | "conversation";
@@ -30,8 +30,8 @@ export type DashboardToolCard = {
 
 export const dashboardNavItems: readonly DashboardNavItem[] = [
   { key: "dashboard", label: "Dashboard", icon: "dashboard" },
-  { key: "text", label: "Text", icon: "text" },
   { key: "code", label: "Code", icon: "code" },
+  { key: "audio", label: "Audio", icon: "audio" },
   { key: "image", label: "Image", icon: "image" },
   { key: "video", label: "Video", icon: "video" },
   { key: "conversation", label: "Conversation", icon: "conversation" },
@@ -39,18 +39,18 @@ export const dashboardNavItems: readonly DashboardNavItem[] = [
 
 export const dashboardToolCards: readonly DashboardToolCard[] = [
   {
-    key: "text",
-    title: "Text Generation",
-    description: "Generate polished AI text",
-    badgeClassName: "bg-cyan-300 text-slate-900",
-    icon: "text",
-  },
-  {
     key: "code",
     title: "Code Generation",
     description: "Write code in any language",
     badgeClassName: "bg-emerald-400 text-slate-900",
     icon: "code",
+  },
+  {
+    key: "audio",
+    title: "Audio Generation",
+    description: "Generate AI audio",
+    badgeClassName: "bg-purple-400 text-slate-900",
+    icon: "audio",
   },
   {
     key: "image",

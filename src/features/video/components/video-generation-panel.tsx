@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ModuleShell } from "@/features/dashboard/components/module-shell";
+import { AiPromptComposer } from "@/features/dashboard/components/ai-prompt-composer";
 
 import type {
   AiErrorDto,
@@ -10,24 +12,8 @@ import type {
   VideoUsageDto,
 } from "@/types/ai";
 
-const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_MODEL = "replicate-video";
 const DEFAULT_HISTORY_LIMIT = 10;
-
-type MetricCardProps = {
-  label: string;
-  value: string;
-  detail: string;
-};
-
-function MetricCard({ label, value, detail }: MetricCardProps) {
-  return (
-    <article className="rounded-xl border border-[#2d313a] bg-[linear-gradient(135deg,#1c2130_0%,#141822_100%)] p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-slate-100">{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{detail}</p>
-    </article>
-  );
-}
 
 async function parseAiErrorResponse(response: Response): Promise<AiErrorDto> {
   try {
@@ -49,31 +35,15 @@ function formatDateTime(timestampMs: number): string {
   }).format(new Date(timestampMs));
 }
 
-function renderUsageValue(used: number, limit: number | null): string {
-  if (limit === null) {
-    return `${used}`;
-  }
-
-  return `${used} / ${limit}`;
-}
-
-function renderRemainingUsageValue(used: number, limit: number | null): string {
-  if (limit === null) {
-    return "Unlimited";
-  }
-
-  const remaining = Math.max(limit - used, 0);
-  return `${remaining} / ${limit}`;
-}
-
 export function VideoGenerationPanel() {
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState(DEFAULT_MODEL);
-  const [result, setResult] = useState<string | null>(null);
+  const [aspectRatio, setAspectRatio] = useState("16:9");
   const [history, setHistory] = useState<VideoGenerationHistoryItemDto[]>([]);
   const [usage, setUsage] = useState<VideoUsageDto | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeletingGenerationId, setIsDeletingGenerationId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const sortedHistory = useMemo(
@@ -83,8 +53,6 @@ export function VideoGenerationPanel() {
       }),
     [history],
   );
-
-  const latestEntry = sortedHistory[0] ?? null;
 
   const loadHistory = useCallback(async () => {
     setIsLoadingHistory(true);
@@ -104,21 +72,19 @@ export function VideoGenerationPanel() {
       const payload = (await response.json()) as VideoHistoryResponseDto;
       setHistory(payload.history);
       setUsage(payload.usage);
-      if (!result && payload.history[0]) {
-        setResult(payload.history[0].output);
-      }
     } catch {
       setErrorMessage("Unable to reach the server. Please try again.");
     } finally {
       setIsLoadingHistory(false);
     }
-  }, [result]);
+  }, []);
 
   useEffect(() => {
     void loadHistory();
   }, [loadHistory]);
 
   async function handleGenerate() {
+    if (!prompt.trim()) return;
     setErrorMessage(null);
     setIsSubmitting(true);
 
@@ -129,6 +95,7 @@ export function VideoGenerationPanel() {
         body: JSON.stringify({
           prompt,
           model,
+          aspectRatio,
         }),
       });
 
@@ -139,7 +106,6 @@ export function VideoGenerationPanel() {
       }
 
       const payload = (await response.json()) as VideoGenerationResponseDto;
-      setResult(payload.generation.output);
       setUsage(payload.usage);
       setPrompt("");
       await loadHistory();
@@ -150,154 +116,201 @@ export function VideoGenerationPanel() {
     }
   }
 
-  return (
-    <section className="space-y-6">
-      <header>
-        <h2 className="text-2xl font-semibold tracking-tight text-slate-100">Video Generation</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Generate structured video treatments in a wider, production-ready module layout.
-        </p>
-      </header>
+  async function handleDeleteGeneration(generationId: string) {
+    const shouldDelete = window.confirm("Delete this video from history? This will also remove stored media.");
+    if (!shouldDelete) {
+      return;
+    }
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-4">
-          <article className="rounded-xl border border-[#2d313a] bg-[#171b25] p-6">
-            <label className="mb-2 block text-sm font-medium text-slate-300" htmlFor="video-prompt">
-              Prompt
-            </label>
-            <textarea
-              id="video-prompt"
-              value={prompt}
-              required
-              minLength={5}
-              maxLength={2000}
-              rows={5}
-              onChange={(event) => setPrompt(event.target.value)}
-              className="w-full rounded-md border border-[#2d333b] bg-[#0f1115] px-4 py-3 text-sm text-[#f3f4f6] shadow-sm outline-none placeholder:text-[#6b7280] focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]"
-              placeholder="Create a 15-second cinematic launch trailer for an AI SaaS brand with dynamic motion and premium lighting."
-            />
+    setIsDeletingGenerationId(generationId);
+    setErrorMessage(null);
 
-            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div className="w-full md:max-w-sm">
-                <label
-                  className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500"
-                  htmlFor="video-model"
-                >
-                  Model
-                </label>
-                <input
-                  id="video-model"
-                  value={model}
-                  onChange={(event) => setModel(event.target.value)}
-                  className="w-full rounded-md border border-[#2d333b] bg-[#0f1115] px-4 py-2.5 text-sm text-[#f3f4f6] shadow-sm outline-none placeholder:text-[#6b7280] focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void handleGenerate();
-                }}
-                disabled={isSubmitting}
-                className="inline-flex h-11 items-center justify-center rounded-md bg-[#14b8a6] px-6 text-sm font-semibold text-[#0f1115] transition hover:bg-[#2dd4bf] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSubmitting ? "Generating..." : "Generate video"}
-              </button>
-            </div>
+    try {
+      const response = await fetch(`/api/ai/video/${generationId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const errorPayload = await parseAiErrorResponse(response);
+        setErrorMessage(errorPayload.error || "Could not delete video.");
+        return;
+      }
 
-            {errorMessage ? (
-              <p className="mt-4 rounded-md border border-rose-700/40 bg-rose-950/30 px-3 py-2 text-sm text-rose-300">
-                {errorMessage}
-              </p>
-            ) : null}
-          </article>
+      setHistory((current) => current.filter((item) => item.id !== generationId));
+    } catch {
+      setErrorMessage("Unable to reach the server. Please try again.");
+    } finally {
+      setIsDeletingGenerationId(null);
+    }
+  }
 
-          <article className="rounded-xl border border-[#2d313a] bg-[#171b25] p-6">
-            <h3 className="text-base font-semibold text-slate-100">Latest Output</h3>
-            {result ? (
-              <pre className="mt-4 max-h-[26rem] overflow-auto whitespace-pre-wrap rounded-lg border border-[#2d313a] bg-[#0f1115] p-4 text-sm leading-6 text-slate-200">
-                {result}
-              </pre>
-            ) : (
-              <p className="mt-4 text-sm text-slate-500">No output yet. Generate video instructions to see results.</p>
-            )}
-          </article>
-
-          <article className="overflow-hidden rounded-xl border border-[#2d313a] bg-[#171b25]">
-            <header className="flex items-center justify-between border-b border-[#2d313a] px-6 py-4">
-              <h3 className="text-base font-semibold text-slate-100">Recent Video Generations</h3>
-              <button
-                type="button"
-                onClick={() => {
-                  void loadHistory();
-                }}
-                className="text-sm text-[#14b8a6] hover:text-[#2dd4bf]"
-              >
-                Refresh
-              </button>
-            </header>
-            {isLoadingHistory ? (
-              <p className="px-6 py-5 text-sm text-slate-500">Loading history...</p>
-            ) : sortedHistory.length === 0 ? (
-              <p className="px-6 py-5 text-sm text-slate-500">No video generations yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-[#2d313a] text-left">
-                  <thead className="bg-[#141925] text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-6 py-3 font-medium">Prompt</th>
-                      <th className="px-6 py-3 font-medium">Model</th>
-                      <th className="px-6 py-3 font-medium">Tokens</th>
-                      <th className="px-6 py-3 font-medium">Created</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#242833] text-sm text-slate-200">
-                    {sortedHistory.map((entry) => (
-                      <tr key={entry.id}>
-                        <td className="max-w-xl px-6 py-4">
-                          <p className="line-clamp-2 text-slate-200">{entry.prompt}</p>
-                          <p className="mt-1 line-clamp-3 text-xs text-slate-400">{entry.output}</p>
-                        </td>
-                        <td className="px-6 py-4 text-slate-300">{entry.model}</td>
-                        <td className="px-6 py-4 text-slate-300">{entry.tokensUsed ?? "N/A"}</td>
-                        <td className="px-6 py-4 text-slate-400">{formatDateTime(entry.createdAt)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </article>
+  const sidebarSlot = (
+    <div className="flex h-full min-h-0 flex-col gap-8">
+      {/* Aspect Ratio */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          </svg>
+          <h3 className="text-xs font-semibold text-slate-100">Aspect Ratio</h3>
         </div>
-
-        <aside className="space-y-4">
-          <MetricCard
-            label="Plan"
-            value={usage?.planKey.toUpperCase() ?? "BASIC"}
-            detail="Active subscription"
-          />
-          <MetricCard
-            label="Remaining Generations"
-            value={renderRemainingUsageValue(usage?.generation.used ?? 0, usage?.generation.limit ?? null)}
-            detail="Shared monthly quota"
-          />
-          <MetricCard
-            label="Token Usage"
-            value={renderUsageValue(usage?.tokens.used ?? 0, usage?.tokens.limit ?? null)}
-            detail="Current monthly usage"
-          />
-
-          <article className="rounded-xl border border-[#2d313a] bg-[#171b25] p-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Latest Prompt</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
-              {latestEntry?.prompt ? latestEntry.prompt.slice(0, 220) : "No prompts yet."}
-              {latestEntry?.prompt && latestEntry.prompt.length > 220 ? "..." : ""}
-            </p>
-            <p className="mt-3 text-xs text-slate-500">
-              {latestEntry ? formatDateTime(latestEntry.createdAt) : "Waiting for activity"}
-            </p>
-          </article>
-        </aside>
+        <div className="grid grid-cols-3 gap-3">
+          <button
+            onClick={() => setAspectRatio("1:1")}
+            className={`flex flex-col items-center justify-center gap-2 rounded-xl border ${aspectRatio === "1:1" ? "border-[#14b8a6] bg-[#182a29]" : "border-[#2d313a] bg-transparent hover:bg-[#1f2128]"} py-4 transition-colors`}
+          >
+            <div className={`h-6 w-6 border-2 ${aspectRatio === "1:1" ? "border-[#14b8a6]" : "border-slate-500"} rounded-sm`} />
+            <span className={`text-[10px] font-medium ${aspectRatio === "1:1" ? "text-[#14b8a6]" : "text-slate-400"}`}>1:1</span>
+          </button>
+          <button
+            onClick={() => setAspectRatio("16:9")}
+            className={`flex flex-col items-center justify-center gap-2 rounded-xl border ${aspectRatio === "16:9" ? "border-[#14b8a6] bg-[#182a29]" : "border-[#2d313a] bg-transparent hover:bg-[#1f2128]"} py-4 transition-colors`}
+          >
+            <div className={`h-4 w-7 border-2 ${aspectRatio === "16:9" ? "border-[#14b8a6]" : "border-slate-500"} rounded-sm`} />
+            <span className={`text-[10px] font-medium ${aspectRatio === "16:9" ? "text-[#14b8a6]" : "text-slate-400"}`}>16:9</span>
+          </button>
+          <button
+            onClick={() => setAspectRatio("9:16")}
+            className={`flex flex-col items-center justify-center gap-2 rounded-xl border ${aspectRatio === "9:16" ? "border-[#14b8a6] bg-[#182a29]" : "border-[#2d313a] bg-transparent hover:bg-[#1f2128]"} py-4 transition-colors`}
+          >
+            <div className={`h-7 w-4 border-2 ${aspectRatio === "9:16" ? "border-[#14b8a6]" : "border-slate-500"} rounded-sm`} />
+            <span className={`text-[10px] font-medium ${aspectRatio === "9:16" ? "text-[#14b8a6]" : "text-slate-400"}`}>9:16</span>
+          </button>
+        </div>
       </div>
-    </section>
+
+      {/* Model */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <h3 className="text-xs font-semibold text-slate-100">Video Generator</h3>
+        </div>
+        <div className="relative">
+          <select 
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="w-full appearance-none rounded-lg border border-[#2d313a] bg-[#111215] px-4 py-2.5 text-xs text-slate-200 outline-none focus:border-[#14b8a6]"
+          >
+            <option value="replicate-video">Replicate Video</option>
+          </select>
+          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      {/* Advanced Settings */}
+      <div className="mt-auto pt-2 border-t border-[#24262d]">
+        <button className="flex items-center justify-between w-full group">
+          <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200 transition-colors">Output Settings</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 group-hover:text-slate-300">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+
+  const contentSlot = (
+    <div className="flex-1 overflow-y-auto px-8 py-8 custom-scrollbar">
+      {isLoadingHistory ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-500 border-t-[#14b8a6]" />
+        </div>
+      ) : sortedHistory.length === 0 ? (
+        <div className="flex items-center justify-center h-full flex-col text-slate-400">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mb-4 text-slate-600">
+            <polygon points="23 7 16 12 23 17 23 7" />
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+          </svg>
+          <p className="text-sm">No videos generated yet.</p>
+          <p className="text-xs mt-1 text-slate-500">Provide instructions to start generating.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {sortedHistory.map((item) => (
+            <div key={item.id} className="overflow-hidden rounded-2xl border border-[#2d313a] bg-[#18191e]">
+              <div className="relative aspect-video bg-[#111215]">
+                <button
+                  type="button"
+                  onClick={() => void handleDeleteGeneration(item.id)}
+                  disabled={isDeletingGenerationId === item.id}
+                  className="absolute right-2 top-2 z-20 rounded-md border border-rose-900/50 bg-rose-950/30 p-1 text-rose-300 hover:bg-rose-950/45 disabled:opacity-50"
+                  aria-label={`Delete video generation ${item.prompt}`}
+                  title="Delete video"
+                >
+                  {isDeletingGenerationId === item.id ? (
+                    <span className="px-1 text-[10px]">...</span>
+                  ) : (
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  )}
+                </button>
+                {item.videoUrl ? (
+                  <video
+                    src={item.videoUrl}
+                    controls
+                    preload="metadata"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-5 text-center text-slate-500">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <polygon points="23 7 16 12 23 17 23 7" />
+                      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                    </svg>
+                    <p className="text-xs leading-relaxed text-slate-400 line-clamp-3">{item.output}</p>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-[#2d313a] px-4 py-3">
+                <p className="line-clamp-2 text-xs font-medium text-slate-200">{item.prompt}</p>
+                <p className="mt-1 text-[10px] text-slate-500">{formatDateTime(item.createdAt)}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const promptSlot = (
+    <AiPromptComposer
+      value={prompt}
+      onChange={setPrompt}
+      onSubmit={handleGenerate}
+      placeholder="Describe the video treatment or script you want to generate..."
+      isSubmitting={isSubmitting}
+      submitLabel="Generate Video"
+      submittingLabel="Generating..."
+      tip="Tip: Include scenes, camera movement, pacing, and mood for better output."
+      errorMessage={errorMessage}
+    />
+  );
+
+  return (
+    <ModuleShell
+      title="Video Generation"
+      usage={usage}
+      sidebarSlot={sidebarSlot}
+      contentSlot={contentSlot}
+      promptSlot={promptSlot}
+    />
   );
 }

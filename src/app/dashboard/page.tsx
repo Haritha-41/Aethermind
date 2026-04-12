@@ -8,17 +8,21 @@ type DashboardPageProps = {
 
 const validSections = new Set<DashboardSectionKey>([
   "dashboard",
-  "text",
   "code",
   "image",
   "video",
   "conversation",
+  "audio",
 ]);
 
 function getActiveSection(value: string | string[] | undefined): DashboardSectionKey {
   const rawSection = Array.isArray(value) ? value[0] : value;
   if (!rawSection) {
     return "dashboard";
+  }
+
+  if (rawSection === "music") {
+    return "audio";
   }
 
   return validSections.has(rawSection as DashboardSectionKey)

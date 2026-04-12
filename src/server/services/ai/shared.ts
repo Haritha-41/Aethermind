@@ -6,6 +6,7 @@ import { convexFunctions } from "@/server/convex/functions";
 import type { AiUsageDto } from "@/types/ai";
 
 type ConvexQueryReference = Parameters<ConvexHttpClient["query"]>[0];
+type ConvexMutationReference = Parameters<ConvexHttpClient["mutation"]>[0];
 type ConvexActionReference = Parameters<ConvexHttpClient["action"]>[0];
 
 type PlanQueryResult = {
@@ -74,6 +75,10 @@ export function toConvexActionReference(functionName: string): ConvexActionRefer
   return functionName as unknown as ConvexActionReference;
 }
 
+export function toConvexMutationReference(functionName: string): ConvexMutationReference {
+  return functionName as unknown as ConvexMutationReference;
+}
+
 export function toAiServiceError(
   error: unknown,
   options?: {
@@ -96,6 +101,14 @@ export function toAiServiceError(
   if (message.includes("GEMINI_API_KEY is not configured")) {
     return new AiServiceError(
       "AI provider is not configured. Contact support.",
+      500,
+      "AI_PROVIDER_NOT_CONFIGURED",
+    );
+  }
+
+  if (message.includes("REPLICATE_API_TOKEN is not configured")) {
+    return new AiServiceError(
+      "Replicate provider is not configured. Contact support.",
       500,
       "AI_PROVIDER_NOT_CONFIGURED",
     );
@@ -130,6 +143,67 @@ export function toAiServiceError(
     );
   }
 
+  if (message.includes("Replicate request timed out")) {
+    return new AiServiceError(
+      "Replicate request timed out. Please retry in a moment.",
+      504,
+      "AI_TIMEOUT",
+    );
+  }
+
+  if (message.includes("Replicate request failed")) {
+    if (message.includes("status 422")) {
+      return new AiServiceError(
+        "Replicate rejected this request input. Try simplifying the prompt or changing model/settings.",
+        400,
+        "AI_INVALID_INPUT",
+      );
+    }
+
+    if (message.includes("status 404")) {
+      const suggestion = options?.modelSuggestion ? ` Try ${options.modelSuggestion}.` : "";
+      return new AiServiceError(
+        `Selected model is unavailable for your Replicate key.${suggestion}`.trim(),
+        400,
+        "AI_MODEL_UNAVAILABLE",
+      );
+    }
+
+    if (message.includes("status 429") || message.includes("status 402")) {
+      return new AiServiceError(
+        "Replicate quota or rate limit reached. Please retry in a moment.",
+        429,
+        "AI_RATE_LIMITED",
+      );
+    }
+
+    return new AiServiceError("Replicate request failed. Please try again.", 502, "AI_UPSTREAM");
+  }
+
+  if (message.includes("Replicate prediction failed")) {
+    return new AiServiceError(
+      "Replicate generation failed for this prompt/model. Please try a different prompt.",
+      502,
+      "AI_UPSTREAM",
+    );
+  }
+
+  if (message.includes("Replicate returned no output media URL")) {
+    return new AiServiceError(
+      "Replicate did not return any media output. Please try a different model or prompt.",
+      502,
+      "AI_EMPTY",
+    );
+  }
+
+  if (message.includes("Replicate media fetch failed") || message.includes("Replicate returned an empty media file")) {
+    return new AiServiceError(
+      "Generated media could not be retrieved from Replicate. Please try again.",
+      502,
+      "AI_UPSTREAM",
+    );
+  }
+
   if (message.includes("Gemini returned an empty response")) {
     return new AiServiceError("AI returned an empty response. Please try again.", 502, "AI_EMPTY");
   }
@@ -147,6 +221,38 @@ export function toAiServiceError(
       "Account access is restricted. Contact support.",
       403,
       "ACCOUNT_SUSPENDED",
+    );
+  }
+
+  if (message.includes("Session does not exist")) {
+    return new AiServiceError("The selected session was not found.", 404, "SESSION_NOT_FOUND");
+  }
+
+  if (message.includes("Session does not belong to this user")) {
+    return new AiServiceError("You do not have access to this session.", 403, "SESSION_FORBIDDEN");
+  }
+
+  if (message.includes("Generation does not exist")) {
+    return new AiServiceError(
+      "The selected generation was not found.",
+      404,
+      "GENERATION_NOT_FOUND",
+    );
+  }
+
+  if (message.includes("Generation does not belong to this user")) {
+    return new AiServiceError(
+      "You do not have access to this generation.",
+      403,
+      "GENERATION_FORBIDDEN",
+    );
+  }
+
+  if (message.includes("Generation type mismatch")) {
+    return new AiServiceError(
+      "Selected generation does not match this section.",
+      400,
+      "GENERATION_TYPE_MISMATCH",
     );
   }
 

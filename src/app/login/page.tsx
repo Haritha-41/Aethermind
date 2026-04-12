@@ -1,9 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AuthSocialButtons } from "@/features/auth/components/auth-social-buttons";
 import { LoginForm } from "@/features/auth/components/login-form";
+import { getCurrentUser } from "@/server/services/auth/current-user";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const user = await getCurrentUser();
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#0f1115] px-4 py-12">
       <section className="w-full max-w-md overflow-hidden rounded-xl border border-[#2d333b] bg-[#16181d] shadow-2xl shadow-black/30">

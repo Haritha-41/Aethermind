@@ -5,10 +5,10 @@ import { action, mutation, query } from "./_generated/server";
 import { assertServerAccessKey } from "./security";
 
 const SUPPORTED_GENERATION_KINDS = new Set([
-  "text",
   "image",
   "code",
   "video",
+  "audio",
   "conversation",
 ]);
 
@@ -31,6 +31,10 @@ function normalizeGenerationKind(kind: string | undefined): string | null {
   }
 
   return raw;
+}
+
+function normalizeKindForDashboard(kind: string): string {
+  return kind === "music" ? "audio" : kind;
 }
 
 function getCurrentUserPlanMap(
@@ -80,7 +84,7 @@ export const getDashboardSnapshot = query({
         .query("userPlans")
         .withIndex("by_status", (q) => q.eq("status", "active"))
         .collect(),
-      generationKind
+      generationKind && generationKind !== "audio"
         ? ctx.db
             .query("generations")
             .withIndex("by_kind_created_at", (q) =>
@@ -106,15 +110,20 @@ export const getDashboardSnapshot = query({
       now,
     );
 
-    const filteredGenerations = generations;
+    const filteredGenerations =
+      generationKind === "audio"
+        ? generations.filter((item) => item.kind === "audio" || item.kind === "music")
+        : generations;
 
     const generationByKind = filteredGenerations.reduce<Record<string, number>>((acc, item) => {
-      acc[item.kind] = (acc[item.kind] ?? 0) + 1;
+      const kind = normalizeKindForDashboard(item.kind);
+      acc[kind] = (acc[kind] ?? 0) + 1;
       return acc;
     }, {});
 
     const tokensByKind = tokenUsageEvents.reduce<Record<string, number>>((acc, item) => {
-      const kind = typeof item.metadata?.kind === "string" ? item.metadata.kind : "unknown";
+      const rawKind = typeof item.metadata?.kind === "string" ? item.metadata.kind : "unknown";
+      const kind = normalizeKindForDashboard(rawKind);
       acc[kind] = (acc[kind] ?? 0) + item.units;
       return acc;
     }, {});

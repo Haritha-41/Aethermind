@@ -38,23 +38,22 @@ export function DashboardIcon({ name, className }: DashboardIconProps) {
     );
   }
 
-  if (name === "text") {
-    return (
-      <svg {...commonProps}>
-        <path d="M4 6h16" />
-        <path d="M4 10h11" />
-        <path d="M4 14h16" />
-        <path d="M4 18h9" />
-      </svg>
-    );
-  }
-
   if (name === "image") {
     return (
       <svg {...commonProps}>
         <rect x="3" y="4" width="18" height="16" rx="2.5" />
         <circle cx="9" cy="9" r="1.5" />
         <path d="m21 16-5.5-5.5L8 18" />
+      </svg>
+    );
+  }
+
+  if (name === "audio") {
+    return (
+      <svg {...commonProps}>
+        <path d="M9 18V5l12-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="16" r="3" />
       </svg>
     );
   }

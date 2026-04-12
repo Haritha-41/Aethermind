@@ -10,7 +10,7 @@ export function createInvalidJsonResponse(): NextResponse {
 }
 
 export function createAiErrorResponse(
-  action: "generate" | "history",
+  action: "generate" | "history" | "session",
   error: unknown,
 ): NextResponse {
   if (error instanceof ZodError) {

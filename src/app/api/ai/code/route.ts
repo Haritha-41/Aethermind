@@ -26,8 +26,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { searchParams } = new URL(request.url);
     const query = codeHistoryQuerySchema.parse({
       limit: searchParams.get("limit") ?? undefined,
+      sessionId: searchParams.get("sessionId") ?? undefined,
     });
-    const payload = await listCodeHistoryForUser(user.id, query.limit);
+    const payload = await listCodeHistoryForUser(user.id, query.limit, query.sessionId);
     return NextResponse.json(payload);
   } catch (error) {
     return createAiErrorResponse("history", error);
