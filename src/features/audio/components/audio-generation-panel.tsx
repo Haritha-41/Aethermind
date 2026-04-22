@@ -180,6 +180,7 @@ export function AudioGenerationPanel() {
             onChange={(event) => setModel(event.target.value)}
             className="w-full appearance-none rounded-lg border border-[#2d313a] bg-[#111215] px-4 py-2.5 text-xs text-slate-200 outline-none focus:border-[#14b8a6]"
           >
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
             <option value="replicate-audio">Replicate Chatterbox (TTS)</option>
           </select>
           <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
