@@ -8,10 +8,13 @@ type AiPromptComposerProps = {
   isSubmitting: boolean;
   submitLabel: string;
   submittingLabel: string;
-  tip: string;
+  tip?: string;
   errorMessage?: string | null;
   submitBadge?: string | number;
-  clearLabel?: string;
+  /** Accent color for the send button. Defaults to emerald. */
+  accent?: string;
+  /** "icon" = compact arrow button (chat/code); "label" = wide Generate button. */
+  variant?: "icon" | "label";
 };
 
 export function AiPromptComposer({
@@ -25,74 +28,87 @@ export function AiPromptComposer({
   tip,
   errorMessage,
   submitBadge,
-  clearLabel = "Clear prompt",
+  accent = "#0E9F77",
+  variant = "label",
 }: AiPromptComposerProps) {
+  const isDisabled = isSubmitting || !value.trim();
+
   return (
     <>
-      {errorMessage && (
-        <div className="mb-4 rounded-md border border-rose-700/40 bg-rose-950/30 px-3 py-2 text-sm text-rose-300">
+      {errorMessage ? (
+        <div className="mb-3 rounded-xl border border-[#F0C9C4] bg-[#FBECEC] px-4 py-2.5 text-[13px] text-[#B3473D]">
           {errorMessage}
         </div>
-      )}
+      ) : null}
 
-      <div className="rounded-2xl border border-[#2d313a] bg-[#111215] shadow-lg focus-within:border-[#14b8a6] focus-within:ring-1 focus-within:ring-[#14b8a6] transition-all">
+      <div
+        className="flex items-end gap-3 rounded-2xl border border-[#E6E6E1] bg-[#F6F6F3] py-[13px] pl-[18px] pr-[14px] transition-colors focus-within:border-[#cfcfc7]"
+      >
         <textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
-              onSubmit();
+              if (!isDisabled) onSubmit();
             }
           }}
           placeholder={placeholder}
-          className="w-full min-h-[76px] bg-transparent text-[13px] text-slate-200 resize-none outline-none p-4 placeholder-slate-500"
-          rows={2}
+          rows={1}
+          className="min-h-[28px] flex-1 resize-none bg-transparent py-[5px] text-[14.5px] leading-relaxed text-[#1B1B18] outline-none placeholder:text-[#A6A69E]"
         />
 
-        <div className="flex items-center justify-between px-3 pb-3">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onChange("")}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-[#18191e] hover:text-slate-300 transition-colors"
-              title={clearLabel}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="15" y1="9" x2="9" y2="15" />
-                <line x1="9" y1="9" x2="15" y2="15" />
-              </svg>
-            </button>
-          </div>
-
+        {variant === "icon" ? (
           <button
-            onClick={() => void onSubmit()}
-            disabled={isSubmitting || !value.trim()}
-            className="flex items-center gap-2 rounded-lg bg-[#14b8a6] pl-4 pr-3 py-1.5 text-xs font-semibold text-[#0f1115] transition-colors hover:bg-[#2dd4bf] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(20,184,166,0.3)]"
+            type="button"
+            onClick={() => onSubmit()}
+            disabled={isDisabled}
+            style={{ background: accent }}
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] text-white transition-opacity disabled:opacity-50"
+            aria-label={submitLabel}
+            title={submitLabel}
           >
             {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <div className="h-3 w-3 animate-spin rounded-full border border-black border-t-transparent" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            )}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onSubmit()}
+            disabled={isDisabled}
+            style={{ background: accent }}
+            className="flex h-10 shrink-0 items-center gap-2 rounded-[11px] px-[18px] text-[14px] font-semibold text-white transition-opacity disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                 {submittingLabel}
-              </span>
+              </>
             ) : (
               <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5Z" />
                 </svg>
                 {submitLabel}
                 {submitBadge !== undefined ? (
-                  <span className="ml-1 bg-[#0f1115]/10 rounded px-1.5 py-0.5 text-[10px] font-bold">
+                  <span className="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-bold">
                     {submitBadge}
                   </span>
                 ) : null}
               </>
             )}
           </button>
-        </div>
+        )}
       </div>
 
-      <p className="mt-2 text-center text-[11px] text-slate-500">{tip}</p>
+      {tip ? (
+        <p className="mt-[9px] text-center text-[11.5px] text-[#B0B0A8]">{tip}</p>
+      ) : null}
     </>
   );
 }

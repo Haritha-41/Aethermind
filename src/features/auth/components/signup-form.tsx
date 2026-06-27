@@ -73,7 +73,7 @@ export function SignupForm() {
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
       <div>
-        <label className="mb-1 block text-sm font-medium text-[#d1d5db]" htmlFor="name">
+        <label className="mb-1 block text-sm font-medium text-[#33332E]" htmlFor="name">
           Name
         </label>
         <input
@@ -81,16 +81,16 @@ export function SignupForm() {
           autoComplete="name"
           value={state.name}
           onChange={(event) => setState((prev) => ({ ...prev, name: event.target.value }))}
-          className="w-full rounded-md border border-[#2d333b] bg-[#0f1115] px-4 py-2.5 text-sm text-[#f3f4f6] shadow-sm outline-none placeholder:text-[#6b7280] focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]"
+          className="w-full rounded-[10px] border border-[#E6E6E1] bg-white px-4 py-2.5 text-sm text-[#1B1B18] outline-none placeholder:text-[#A6A69E] focus:border-[#0E9F77]"
           placeholder="Jane Doe"
         />
         {fieldErrors?.name?.[0] ? (
-          <p className="mt-1 text-xs text-rose-400">{fieldErrors.name[0]}</p>
+          <p className="mt-1 text-xs text-[#B3473D]">{fieldErrors.name[0]}</p>
         ) : null}
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-[#d1d5db]" htmlFor="email">
+        <label className="mb-1 block text-sm font-medium text-[#33332E]" htmlFor="email">
           Email address
         </label>
         <input
@@ -100,16 +100,16 @@ export function SignupForm() {
           autoComplete="email"
           value={state.email}
           onChange={(event) => setState((prev) => ({ ...prev, email: event.target.value }))}
-          className="w-full rounded-md border border-[#2d333b] bg-[#0f1115] px-4 py-2.5 text-sm text-[#f3f4f6] shadow-sm outline-none placeholder:text-[#6b7280] focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]"
+          className="w-full rounded-[10px] border border-[#E6E6E1] bg-white px-4 py-2.5 text-sm text-[#1B1B18] outline-none placeholder:text-[#A6A69E] focus:border-[#0E9F77]"
           placeholder="name@company.com"
         />
         {fieldErrors?.email?.[0] ? (
-          <p className="mt-1 text-xs text-rose-400">{fieldErrors.email[0]}</p>
+          <p className="mt-1 text-xs text-[#B3473D]">{fieldErrors.email[0]}</p>
         ) : null}
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-[#d1d5db]" htmlFor="password">
+        <label className="mb-1 block text-sm font-medium text-[#33332E]" htmlFor="password">
           Password
         </label>
         <div className="relative">
@@ -122,25 +122,25 @@ export function SignupForm() {
             onChange={(event) =>
               setState((prev) => ({ ...prev, password: event.target.value }))
             }
-            className="w-full rounded-md border border-[#2d333b] bg-[#0f1115] px-4 py-2.5 pr-20 text-sm text-[#f3f4f6] shadow-sm outline-none placeholder:text-[#6b7280] focus:border-[#14b8a6] focus:ring-1 focus:ring-[#14b8a6]"
+            className="w-full rounded-[10px] border border-[#E6E6E1] bg-white px-4 py-2.5 pr-20 text-sm text-[#1B1B18] outline-none placeholder:text-[#A6A69E] focus:border-[#0E9F77]"
             placeholder="••••••••"
           />
           <button
             type="button"
             onClick={() => setIsPasswordVisible((previous) => !previous)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#9ca3af] transition hover:text-[#d1d5db]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#9A9A92] transition hover:text-[#6E6E68]"
             aria-label={isPasswordVisible ? "Hide password" : "Show password"}
           >
             {isPasswordVisible ? "Hide" : "Show"}
           </button>
         </div>
         {fieldErrors?.password?.[0] ? (
-          <p className="mt-1 text-xs text-rose-400">{fieldErrors.password[0]}</p>
+          <p className="mt-1 text-xs text-[#B3473D]">{fieldErrors.password[0]}</p>
         ) : null}
       </div>
 
       {errorMessage ? (
-        <p className="rounded-md border border-rose-700/40 bg-rose-950/30 px-3 py-2 text-sm text-rose-300">
+        <p className="rounded-[10px] border border-[#F0C9C4] bg-[#FBECEC] px-3 py-2 text-sm text-[#B3473D]">
           {errorMessage}
         </p>
       ) : null}
@@ -148,7 +148,7 @@ export function SignupForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-md bg-[#14b8a6] px-4 py-2.5 text-sm font-medium text-[#0f1115] transition hover:bg-[#2dd4bf] disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-[10px] bg-[#0E9F77] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0B8366] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Creating account..." : "Create account"}
       </button>

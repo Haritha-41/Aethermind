@@ -5,17 +5,17 @@ export function AuthSocialButtons() {
     <div className="space-y-6">
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[#2d333b]" />
+          <div className="w-full border-t border-[#ECECE8]" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-[#16181d] px-2 text-[#9ca3af]">Or continue with</span>
+          <span className="bg-white px-2 text-[#9A9A92]">Or continue with</span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-md border border-[#2d333b] px-4 py-2.5 text-sm font-medium text-[#d1d5db] transition hover:border-slate-500"
+          className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#E6E6E1] bg-white px-4 py-2.5 text-sm font-medium text-[#3A3A36] transition hover:bg-[#F6F6F3]"
           title="Google login will be added in a future phase"
         >
           <span className="text-sm font-semibold">G</span>
@@ -23,7 +23,7 @@ export function AuthSocialButtons() {
         </button>
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-md border border-[#2d333b] px-4 py-2.5 text-sm font-medium text-[#d1d5db] transition hover:border-slate-500"
+          className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#E6E6E1] bg-white px-4 py-2.5 text-sm font-medium text-[#3A3A36] transition hover:bg-[#F6F6F3]"
           title="GitHub login will be added in a future phase"
         >
           <span className="text-sm font-semibold">◔</span>

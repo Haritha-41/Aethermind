@@ -13,6 +13,8 @@ const validSections = new Set<DashboardSectionKey>([
   "video",
   "conversation",
   "audio",
+  "analytics",
+  "settings",
 ]);
 
 function getActiveSection(value: string | string[] | undefined): DashboardSectionKey {

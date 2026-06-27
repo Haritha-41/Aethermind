@@ -7,10 +7,75 @@
 }
 
 body {
-  @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+  @apply min-h-screen antialiased;
+  background: #f6f6f3;
+  color: #1b1b18;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    system-ui, sans-serif;
 }
 
 a {
-  @apply text-brand-600 hover:text-brand-700;
+  color: inherit;
 }
 
+/* ---- mockup parity: scrollbar ---- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #dcdcd6;
+  border-radius: 8px;
+  border: 3px solid #f6f6f3;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #cfcfc8;
+}
+
+/* compact scrollbar for inner rails/canvases */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #dcdcd6;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ---- mockup parity: animations ---- */
+@keyframes aurora {
+  0% { transform: translate(-8%, -6%) scale(1); }
+  50% { transform: translate(8%, 6%) scale(1.15); }
+  100% { transform: translate(-8%, -6%) scale(1); }
+}
+@keyframes aurora2 {
+  0% { transform: translate(6%, 4%) scale(1.1); }
+  50% { transform: translate(-6%, -8%) scale(1); }
+  100% { transform: translate(6%, 4%) scale(1.1); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.anim-aurora { animation: aurora 14s ease-in-out infinite; }
+.anim-aurora2 { animation: aurora2 18s ease-in-out infinite; }
+.anim-fade-up { animation: fadeUp 0.5s ease both; }
+.anim-pop { animation: fadeUp 0.14s ease both; }
+
+/* lift-on-hover card interaction */
+.lift {
+  transition: transform 0.16s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.16s;
+}
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px -14px rgba(20, 20, 18, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-aurora, .anim-aurora2, .anim-fade-up, .anim-pop { animation: none; }
+}
