@@ -10,30 +10,26 @@ export function DashboardIcon({ name, className }: DashboardIconProps) {
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 1.75,
+    strokeWidth: 1.8,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     className,
     "aria-hidden": true,
   };
 
-  if (name === "dashboard") {
+  if (name === "home") {
     return (
       <svg {...commonProps}>
-        <rect x="3" y="3" width="8" height="8" rx="1.5" />
-        <rect x="13" y="3" width="8" height="5" rx="1.5" />
-        <rect x="13" y="10" width="8" height="11" rx="1.5" />
-        <rect x="3" y="13" width="8" height="8" rx="1.5" />
+        <path d="M3 10.5 12 3l9 7.5" />
+        <path d="M5 9.5V20h14V9.5" />
       </svg>
     );
   }
 
-  if (name === "code") {
+  if (name === "chat") {
     return (
       <svg {...commonProps}>
-        <path d="M8 8 4 12l4 4" />
-        <path d="m16 8 4 4-4 4" />
-        <path d="m13.5 5-3 14" />
+        <path d="M21 11.5a8.5 8.5 0 0 1-12.5 7.5L3 21l2-5.5A8.5 8.5 0 1 1 21 11.5Z" />
       </svg>
     );
   }
@@ -41,19 +37,9 @@ export function DashboardIcon({ name, className }: DashboardIconProps) {
   if (name === "image") {
     return (
       <svg {...commonProps}>
-        <rect x="3" y="4" width="18" height="16" rx="2.5" />
-        <circle cx="9" cy="9" r="1.5" />
-        <path d="m21 16-5.5-5.5L8 18" />
-      </svg>
-    );
-  }
-
-  if (name === "audio") {
-    return (
-      <svg {...commonProps}>
-        <path d="M9 18V5l12-2v13" />
-        <circle cx="6" cy="18" r="3" />
-        <circle cx="18" cy="16" r="3" />
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <circle cx="8.5" cy="8.5" r="1.6" />
+        <path d="m21 15-5-5L5 21" />
       </svg>
     );
   }
@@ -61,17 +47,44 @@ export function DashboardIcon({ name, className }: DashboardIconProps) {
   if (name === "video") {
     return (
       <svg {...commonProps}>
-        <rect x="3" y="7" width="13" height="10" rx="2" />
-        <path d="m16 10 5-3v10l-5-3z" />
+        <rect x="3" y="5" width="13" height="14" rx="3" />
+        <path d="m16 9 5-3v12l-5-3" />
       </svg>
     );
   }
 
+  if (name === "audio") {
+    return (
+      <svg {...commonProps}>
+        <path d="M9 18V5l10-2v13" />
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="16" cy="16" r="3" />
+      </svg>
+    );
+  }
+
+  if (name === "code") {
+    return (
+      <svg {...commonProps}>
+        <path d="m8 7-5 5 5 5" />
+        <path d="m16 7 5 5-5 5" />
+      </svg>
+    );
+  }
+
+  if (name === "analytics") {
+    return (
+      <svg {...commonProps}>
+        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+      </svg>
+    );
+  }
+
+  // settings (gear)
   return (
     <svg {...commonProps}>
-      <path d="M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 3v-3H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />
-      <path d="M8 11h8" />
-      <path d="M8 14h5" />
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M19.4 13.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8 1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.4 1Z" />
     </svg>
   );
 }

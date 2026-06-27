@@ -2,7 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ModuleShell } from "@/features/dashboard/components/module-shell";
+import { ModelPicker, type ModelOption } from "@/features/dashboard/components/model-picker";
+import { ToolBadge } from "@/features/dashboard/components/tool-badge";
+import { toolAccents } from "@/features/dashboard/config/dashboard-navigation";
 import { AiPromptComposer } from "@/features/dashboard/components/ai-prompt-composer";
+
+const MODEL_OPTIONS: readonly ModelOption[] = [
+  { value: "replicate-video", name: "Replicate Video", provider: "Replicate", dot: "#E5532E", tag: "Versatile" },
+  { value: "gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "Google", dot: "#4285F4", tag: "Realistic" },
+];
+
+const RATIOS: { value: string; w: number; h: number }[] = [
+  { value: "1:1", w: 20, h: 20 },
+  { value: "16:9", w: 24, h: 14 },
+  { value: "9:16", w: 14, h: 24 },
+];
 
 import type {
   AiErrorDto,
@@ -23,16 +37,6 @@ async function parseAiErrorResponse(response: Response): Promise<AiErrorDto> {
       error: `Request failed with status ${response.status}.`,
     };
   }
-}
-
-function formatDateTime(timestampMs: number): string {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(timestampMs));
 }
 
 export function VideoGenerationPanel() {
@@ -143,150 +147,139 @@ export function VideoGenerationPanel() {
     }
   }
 
+  const featured = sortedHistory[0];
+  const rest = sortedHistory.slice(1);
+
   const sidebarSlot = (
-    <div className="flex h-full min-h-0 flex-col gap-8">
+    <div className="flex h-full min-h-0 flex-col gap-6 p-5">
       {/* Aspect Ratio */}
       <div>
-        <div className="flex items-center gap-2 mb-4">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          </svg>
-          <h3 className="text-xs font-semibold text-slate-100">Aspect Ratio</h3>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <button
-            onClick={() => setAspectRatio("1:1")}
-            className={`flex flex-col items-center justify-center gap-2 rounded-xl border ${aspectRatio === "1:1" ? "border-[#14b8a6] bg-[#182a29]" : "border-[#2d313a] bg-transparent hover:bg-[#1f2128]"} py-4 transition-colors`}
-          >
-            <div className={`h-6 w-6 border-2 ${aspectRatio === "1:1" ? "border-[#14b8a6]" : "border-slate-500"} rounded-sm`} />
-            <span className={`text-[10px] font-medium ${aspectRatio === "1:1" ? "text-[#14b8a6]" : "text-slate-400"}`}>1:1</span>
-          </button>
-          <button
-            onClick={() => setAspectRatio("16:9")}
-            className={`flex flex-col items-center justify-center gap-2 rounded-xl border ${aspectRatio === "16:9" ? "border-[#14b8a6] bg-[#182a29]" : "border-[#2d313a] bg-transparent hover:bg-[#1f2128]"} py-4 transition-colors`}
-          >
-            <div className={`h-4 w-7 border-2 ${aspectRatio === "16:9" ? "border-[#14b8a6]" : "border-slate-500"} rounded-sm`} />
-            <span className={`text-[10px] font-medium ${aspectRatio === "16:9" ? "text-[#14b8a6]" : "text-slate-400"}`}>16:9</span>
-          </button>
-          <button
-            onClick={() => setAspectRatio("9:16")}
-            className={`flex flex-col items-center justify-center gap-2 rounded-xl border ${aspectRatio === "9:16" ? "border-[#14b8a6] bg-[#182a29]" : "border-[#2d313a] bg-transparent hover:bg-[#1f2128]"} py-4 transition-colors`}
-          >
-            <div className={`h-7 w-4 border-2 ${aspectRatio === "9:16" ? "border-[#14b8a6]" : "border-slate-500"} rounded-sm`} />
-            <span className={`text-[10px] font-medium ${aspectRatio === "9:16" ? "text-[#14b8a6]" : "text-slate-400"}`}>9:16</span>
-          </button>
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#A6A69E]">Aspect ratio</div>
+        <div className="grid grid-cols-3 gap-[9px]">
+          {RATIOS.map((ratio) => {
+            const active = aspectRatio === ratio.value;
+            return (
+              <button
+                key={ratio.value}
+                onClick={() => setAspectRatio(ratio.value)}
+                className={`flex h-16 flex-col items-center justify-center gap-[9px] rounded-[12px] border transition-colors ${
+                  active ? "border-[#BCCFF0] bg-[#E7EEFB] text-[#3C63B8]" : "border-[#E6E6E1] bg-white text-[#6E6E68]"
+                }`}
+              >
+                <div
+                  className="rounded-[3px] border-[1.8px]"
+                  style={{ width: ratio.w, height: ratio.h, borderColor: active ? "#5A7FD6" : "#C2C2BA" }}
+                />
+                <span className="text-[12px] font-semibold">{ratio.value}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Model */}
+      {/* Duration (presentational) */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          <h3 className="text-xs font-semibold text-slate-100">Video Generator</h3>
-        </div>
-        <div className="relative">
-          <select 
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            className="w-full appearance-none rounded-lg border border-[#2d313a] bg-[#111215] px-4 py-2.5 text-xs text-slate-200 outline-none focus:border-[#14b8a6]"
-          >
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            <option value="replicate-video">Replicate Video</option>
-          </select>
-          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#A6A69E]">Duration</div>
+        <div className="flex gap-[9px]">
+          <div className="flex-1 cursor-pointer rounded-[11px] border border-[#BCCFF0] bg-[#E7EEFB] py-[11px] text-center text-[13px] font-semibold text-[#3C63B8]">5s</div>
+          <div className="flex-1 cursor-pointer rounded-[11px] border border-[#E6E6E1] bg-white py-[11px] text-center text-[13px] font-semibold text-[#6E6E68]">10s</div>
         </div>
       </div>
-      
-      {/* Advanced Settings */}
-      <div className="mt-auto pt-2 border-t border-[#24262d]">
-        <button className="flex items-center justify-between w-full group">
-          <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200 transition-colors">Output Settings</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 group-hover:text-slate-300">
-            <polyline points="6 9 12 15 18 9" />
+
+      {/* Motion (presentational) */}
+      <div>
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#A6A69E]">Motion</div>
+        <div className="flex cursor-pointer items-center justify-between rounded-[11px] border border-[#E6E6E1] bg-white px-[14px] py-[11px]">
+          <span className="text-[13.5px] font-medium">Smooth · cinematic</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B0B0A8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m6 9 6 6 6-6" />
           </svg>
-        </button>
+        </div>
+      </div>
+
+      <div className="mt-auto rounded-[12px] border border-[#DCE6F6] bg-[#EEF3FB] px-[14px] py-[13px] text-[12px] leading-[1.5] text-[#4E648C]">
+        Cinematic clips render in ~40s. Credits scale with duration.
       </div>
     </div>
   );
 
+  const deleteButton = (item: VideoGenerationHistoryItemDto) => (
+    <button
+      type="button"
+      onClick={() => void handleDeleteGeneration(item.id)}
+      disabled={isDeletingGenerationId === item.id}
+      className="absolute right-2 top-2 z-20 rounded-md bg-black/40 p-1 text-white opacity-0 transition-opacity hover:bg-black/60 group-hover:opacity-100 disabled:opacity-50"
+      aria-label={`Delete video generation ${item.prompt}`}
+      title="Delete video"
+    >
+      {isDeletingGenerationId === item.id ? (
+        <span className="px-1 text-[10px]">…</span>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3 6 5 6 21 6" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </svg>
+      )}
+    </button>
+  );
+
   const contentSlot = (
-    <div className="flex-1 overflow-y-auto px-8 py-8 custom-scrollbar">
+    <div className="custom-scrollbar flex-1 overflow-y-auto px-7 py-6">
       {isLoadingHistory ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-500 border-t-[#14b8a6]" />
+        <div className="flex h-full items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E6E6E1] border-t-[#5A7FD6]" />
         </div>
-      ) : sortedHistory.length === 0 ? (
-        <div className="flex items-center justify-center h-full flex-col text-slate-400">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mb-4 text-slate-600">
+      ) : !featured ? (
+        <div className="flex h-full flex-col items-center justify-center text-[#9A9A92]">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mb-4 text-[#D6D6CF]">
             <polygon points="23 7 16 12 23 17 23 7" />
             <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
           </svg>
           <p className="text-sm">No videos generated yet.</p>
-          <p className="text-xs mt-1 text-slate-500">Provide instructions to start generating.</p>
+          <p className="mt-1 text-xs text-[#B0B0A8]">Provide instructions to start generating.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {sortedHistory.map((item) => (
-            <div key={item.id} className="overflow-hidden rounded-2xl border border-[#2d313a] bg-[#18191e]">
-              <div className="relative aspect-video bg-[#111215]">
-                <button
-                  type="button"
-                  onClick={() => void handleDeleteGeneration(item.id)}
-                  disabled={isDeletingGenerationId === item.id}
-                  className="absolute right-2 top-2 z-20 rounded-md border border-rose-900/50 bg-rose-950/30 p-1 text-rose-300 hover:bg-rose-950/45 disabled:opacity-50"
-                  aria-label={`Delete video generation ${item.prompt}`}
-                  title="Delete video"
-                >
-                  {isDeletingGenerationId === item.id ? (
-                    <span className="px-1 text-[10px]">...</span>
-                  ) : (
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  )}
-                </button>
-                {item.videoUrl ? (
-                  <video
-                    src={item.videoUrl}
-                    controls
-                    preload="metadata"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-5 text-center text-slate-500">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <polygon points="23 7 16 12 23 17 23 7" />
-                      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                    </svg>
-                    <p className="text-xs leading-relaxed text-slate-400 line-clamp-3">{item.output}</p>
-                  </div>
-                )}
+        <>
+          {/* featured player */}
+          <div className="group relative aspect-video overflow-hidden rounded-[20px] bg-[#dfe3ea] shadow-[0_14px_34px_-16px_rgba(20,20,18,0.3)]">
+            {deleteButton(featured)}
+            {featured.videoUrl ? (
+              <video src={featured.videoUrl} controls preload="metadata" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-6 text-center text-[#6E6E68]">
+                <p className="line-clamp-3 text-xs leading-relaxed">{featured.output}</p>
               </div>
-              <div className="border-t border-[#2d313a] px-4 py-3">
-                <p className="line-clamp-2 text-xs font-medium text-slate-200">{item.prompt}</p>
-                <p className="mt-1 text-[10px] text-slate-500">{formatDateTime(item.createdAt)}</p>
-              </div>
+            )}
+            <div className="pointer-events-none absolute inset-x-[18px] bottom-4">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-white/80 [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">Latest render</div>
+              <div className="line-clamp-1 text-[16px] font-semibold text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{featured.prompt}</div>
             </div>
-          ))}
-        </div>
+          </div>
+
+          {rest.length > 0 ? (
+            <>
+              <div className="mb-3 mt-6 text-[11px] font-semibold uppercase tracking-[0.05em] text-[#A6A69E]">Recent clips</div>
+              <div className="grid grid-cols-2 gap-[14px] lg:grid-cols-3">
+                {rest.map((item) => (
+                  <div key={item.id} className="lift group relative aspect-video overflow-hidden rounded-[14px] bg-[#dfe3ea]">
+                    {deleteButton(item)}
+                    {item.videoUrl ? (
+                      <video src={item.videoUrl} controls preload="metadata" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center px-3 text-center text-[11px] text-[#6E6E68]">
+                        <span className="line-clamp-3">{item.output}</span>
+                      </div>
+                    )}
+                    <p className="pointer-events-none absolute inset-x-[10px] bottom-[9px] line-clamp-1 text-[11px] font-medium text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.4)]">
+                      {item.prompt}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </>
       )}
     </div>
   );
@@ -296,20 +289,23 @@ export function VideoGenerationPanel() {
       value={prompt}
       onChange={setPrompt}
       onSubmit={handleGenerate}
-      placeholder="Describe the video treatment or script you want to generate..."
+      placeholder="Describe the video you want to generate…"
       isSubmitting={isSubmitting}
-      submitLabel="Generate Video"
+      submitLabel="Generate"
       submittingLabel="Generating..."
-      tip="Tip: Include scenes, camera movement, pacing, and mood for better output."
       errorMessage={errorMessage}
+      accent={toolAccents.video.fg}
     />
   );
 
   return (
     <ModuleShell
-      title="Video Generation"
+      title="Video"
+      icon={<ToolBadge icon="video" fg={toolAccents.video.fg} bg={toolAccents.video.bg} />}
+      headerRight={<ModelPicker options={MODEL_OPTIONS} value={model} onChange={setModel} />}
       usage={usage}
       sidebarSlot={sidebarSlot}
+      sidebarWidth={280}
       contentSlot={contentSlot}
       promptSlot={promptSlot}
     />

@@ -1,9 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ModuleShell } from "@/features/dashboard/components/module-shell";
+import { ModelPicker, type ModelOption } from "@/features/dashboard/components/model-picker";
+import { ToolBadge } from "@/features/dashboard/components/tool-badge";
+import { toolAccents } from "@/features/dashboard/config/dashboard-navigation";
 import { CodeOutputRenderer } from "@/features/code/components/code-output-renderer";
 import { AiPromptComposer } from "@/features/dashboard/components/ai-prompt-composer";
+
+const MODEL_OPTIONS: readonly ModelOption[] = [
+  { value: "gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "Google", dot: "#4285F4", tag: "Fastest" },
+];
 
 import type {
   AiSessionDto,
@@ -340,216 +347,148 @@ export function ConversationPanel() {
   }
 
   const sidebarSlot = (
-    <div className="flex h-full min-h-0 flex-col gap-8">
-      {/* Model */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          <h3 className="text-xs font-semibold text-slate-100">Conversation Model</h3>
-        </div>
-        <div className="relative">
-          <select 
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            className="w-full appearance-none rounded-lg border border-[#2d313a] bg-[#111215] px-4 py-2.5 text-xs text-slate-200 outline-none focus:border-[#14b8a6]"
-          >
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-          </select>
-          <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
-        </div>
-      </div>
-      
-      {/* Sessions */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 border-t border-[#24262d] pt-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-slate-100">Previous Sessions</h3>
-          <button
-            type="button"
-            onClick={() => void handleCreateSession()}
-            disabled={isCreatingSession}
-            className="rounded-md border border-[#2d313a] bg-[#111215] px-2 py-1 text-[11px] font-medium text-slate-300 transition-colors hover:border-[#14b8a6] hover:text-slate-100 disabled:opacity-50"
-          >
-            {isCreatingSession ? "Creating..." : "New"}
-          </button>
-        </div>
-
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between px-[18px] pb-[10px] pt-4">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#A6A69E]">History</span>
         <button
           type="button"
-          onClick={() => {
-            void loadSessions(activeSessionId);
-            void loadHistory(activeSessionId);
-          }}
-          className="w-full rounded-md border border-[#2d313a] bg-[#111215] px-3 py-2 text-[11px] font-medium text-slate-300 transition-colors hover:border-[#14b8a6] hover:text-slate-100"
+          onClick={() => void handleCreateSession()}
+          disabled={isCreatingSession}
+          className="flex items-center gap-[5px] rounded-lg bg-[#E7F4EF] px-[10px] py-[5px] text-[12.5px] font-semibold text-[#0E9F77] disabled:opacity-50"
         >
-          Refresh Session
+          {isCreatingSession ? "Creating…" : "+ New"}
         </button>
+      </div>
 
-        <div className="custom-scrollbar flex-1 min-h-0 space-y-2 overflow-y-auto pr-1">
-          {isLoadingSessions ? (
-            <p className="text-[11px] text-slate-500">Loading sessions...</p>
-          ) : sessions.length === 0 ? (
-            <p className="text-[11px] text-slate-500">No sessions yet.</p>
-          ) : (
-            sessions.map((session) => {
-              const isActive = session.id === activeSessionId;
-              const isEditing = session.id === editingSessionId;
-              const isRenaming = session.id === isRenamingSessionId;
-              const isDeleting = session.id === isDeletingSessionId;
-              return (
-                <div
-                  key={session.id}
-                  className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
-                    isActive
-                      ? "border-[#14b8a6] bg-[#182a29]"
-                      : "border-[#2d313a] bg-[#111215] hover:border-[#14b8a6]/60"
-                  }`}
-                >
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      <input
-                        value={editingSessionTitle}
-                        onChange={(event) => setEditingSessionTitle(event.target.value)}
-                        className="w-full rounded-md border border-[#2d313a] bg-[#0f1115] px-2 py-1 text-xs text-slate-100 outline-none focus:border-[#14b8a6]"
-                        maxLength={80}
-                        autoFocus
-                      />
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void handleRenameSession(session.id)}
-                          disabled={isRenaming}
-                          className="rounded-md border border-[#2d313a] bg-[#111215] px-2 py-1 text-[11px] text-slate-200 hover:border-[#14b8a6] disabled:opacity-50"
-                        >
-                          {isRenaming ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelRenamingSession}
-                          className="rounded-md border border-[#2d313a] bg-[#111215] px-2 py-1 text-[11px] text-slate-400 hover:text-slate-200"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-2">
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-3">
+        {isLoadingSessions ? (
+          <p className="px-3 py-2 text-[11.5px] text-[#A6A69E]">Loading sessions…</p>
+        ) : sessions.length === 0 ? (
+          <p className="px-3 py-2 text-[11.5px] text-[#A6A69E]">No sessions yet.</p>
+        ) : (
+          sessions.map((session) => {
+            const isActive = session.id === activeSessionId;
+            const isEditing = session.id === editingSessionId;
+            const isRenaming = session.id === isRenamingSessionId;
+            const isDeleting = session.id === isDeletingSessionId;
+            return (
+              <div
+                key={session.id}
+                className={`group mb-[3px] rounded-[11px] px-3 py-[11px] transition-colors ${
+                  isActive ? "bg-[#E7F4EF]" : "hover:bg-[#F0F0EC]"
+                }`}
+              >
+                {isEditing ? (
+                  <div className="space-y-2">
+                    <input
+                      value={editingSessionTitle}
+                      onChange={(event) => setEditingSessionTitle(event.target.value)}
+                      className="w-full rounded-md border border-[#E6E6E1] bg-white px-2 py-1 text-[13px] text-[#1B1B18] outline-none focus:border-[#0E9F77]"
+                      maxLength={80}
+                      autoFocus
+                    />
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setActiveSessionId(session.id)}
-                        className="min-w-0 flex-1 text-left"
+                        onClick={() => void handleRenameSession(session.id)}
+                        disabled={isRenaming}
+                        className="rounded-md bg-[#E7F4EF] px-2 py-1 text-[11.5px] font-semibold text-[#0E9F77] disabled:opacity-50"
                       >
-                        <p className="truncate text-xs font-medium text-slate-100">{session.title}</p>
-                        <p className="mt-1 text-[10px] text-slate-500">
-                          {formatSessionDate(session.lastActivityAt)}
-                        </p>
+                        {isRenaming ? "Saving…" : "Save"}
                       </button>
-                      <div className="mt-0.5 flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => beginRenamingSession(session)}
-                          className="rounded-md border border-[#2d313a] bg-[#111215] p-1 text-slate-400 hover:border-[#14b8a6] hover:text-slate-100"
-                          aria-label={`Rename ${session.title}`}
-                          title="Rename session"
-                        >
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M12 20h9" />
-                            <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleDeleteSession(session.id)}
-                          disabled={isDeleting}
-                          className="rounded-md border border-rose-900/50 bg-rose-950/20 p-1 text-rose-300 hover:bg-rose-950/35 disabled:opacity-50"
-                          aria-label={`Delete ${session.title}`}
-                          title="Delete session"
-                        >
-                          {isDeleting ? (
-                            <span className="px-1 text-[10px]">...</span>
-                          ) : (
-                            <svg
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              <line x1="10" y1="11" x2="10" y2="17" />
-                              <line x1="14" y1="11" x2="14" y2="17" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={cancelRenamingSession}
+                        className="rounded-md px-2 py-1 text-[11.5px] font-medium text-[#9A9A92] hover:text-[#6E6E68]"
+                      >
+                        Cancel
+                      </button>
                     </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveSessionId(session.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <p className="truncate text-[13px] font-medium leading-[1.3] text-[#33332E]">{session.title}</p>
+                      <p className="mt-[3px] text-[11.5px] text-[#A6A69E]">
+                        {formatSessionDate(session.lastActivityAt)}
+                      </p>
+                    </button>
+                    <div className="mt-0.5 flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => beginRenamingSession(session)}
+                        className="rounded-md p-1 text-[#A6A69E] hover:bg-white hover:text-[#0E9F77]"
+                        aria-label={`Rename ${session.title}`}
+                        title="Rename session"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteSession(session.id)}
+                        disabled={isDeleting}
+                        className="rounded-md p-1 text-[#C0683E] hover:bg-white disabled:opacity-50"
+                        aria-label={`Delete ${session.title}`}
+                        title="Delete session"
+                      >
+                        {isDeleting ? (
+                          <span className="px-1 text-[10px]">…</span>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
 
   const contentSlot = (
-    <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-8 custom-scrollbar">
+    <div className="custom-scrollbar flex-1 overflow-y-auto px-10 py-7">
       {isLoadingHistory ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-500 border-t-[#14b8a6]" />
+        <div className="flex h-full items-center justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#E6E6E1] border-t-[#0E9F77]" />
         </div>
       ) : sortedHistory.length === 0 ? (
-        <div className="flex items-center justify-center h-full flex-col text-slate-400">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mb-4 text-slate-600">
+        <div className="flex h-full flex-col items-center justify-center text-[#9A9A92]">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mb-4 text-[#D6D6CF]">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
           <p className="text-sm">No messages yet.</p>
-          <p className="text-xs mt-1 text-slate-500">Start the conversation below.</p>
+          <p className="mt-1 text-xs text-[#B0B0A8]">Start the conversation below.</p>
         </div>
       ) : (
-        <div className="space-y-6 max-w-4xl mx-auto pb-6">
+        <div className="mx-auto flex max-w-[720px] flex-col gap-[22px] pb-2">
           {sortedHistory.map((entry) => (
-            <div key={entry.id} className="space-y-4">
-              <div className="flex justify-end">
-                <div className="max-w-[88%] rounded-2xl rounded-br-md border border-[#24555f] bg-[#11353c] px-5 py-4">
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-[#7ed4c9] mb-1">You</p>
-                  <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-100">{entry.prompt}</p>
+            <Fragment key={entry.id}>
+              <div className="self-end max-w-[80%] rounded-[16px_16px_4px_16px] bg-[#1B1B18] px-[17px] py-[13px] text-[14.5px] leading-relaxed text-white">
+                <p className="whitespace-pre-wrap">{entry.prompt}</p>
+              </div>
+              <div className="flex items-start gap-[13px]">
+                <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-[linear-gradient(135deg,#10A57C,#0B8366)] text-[13px] font-semibold text-white">
+                  æ
+                </div>
+                <div className="max-w-[80%] overflow-x-auto break-words rounded-[16px_16px_16px_4px] border border-[#ECECE8] bg-white px-[17px] py-[13px] text-[14.5px] leading-relaxed text-[#2A2A26] shadow-[0_1px_2px_rgba(20,20,18,0.04)]">
+                  <CodeOutputRenderer content={entry.output} />
                 </div>
               </div>
-
-              <div className="flex justify-start">
-                <div className="max-w-[88%] rounded-2xl rounded-bl-md border border-[#2d313a] bg-[#18191e] px-5 py-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-[10px] uppercase tracking-wider font-semibold text-[#14b8a6]">Assistant</p>
-                    <span className="text-[10px] text-slate-500 px-1 border border-[#2d313a] rounded-md">{entry.model}</span>
-                  </div>
-                  <div className="overflow-x-auto break-words">
-                    <CodeOutputRenderer content={entry.output} />
-                  </div>
-                </div>
-              </div>
-            </div>
+            </Fragment>
           ))}
           <div ref={threadBottomRef} />
         </div>
@@ -562,23 +501,28 @@ export function ConversationPanel() {
       value={prompt}
       onChange={setPrompt}
       onSubmit={handleSendMessage}
-      placeholder="Message Assistant..."
+      placeholder="Message Assistant…"
       isSubmitting={isSubmitting}
       submitLabel="Send"
       submittingLabel="Sending..."
-      tip="Tip: Press Enter to send, and Shift+Enter for a new line."
+      tip="Enter to send · Shift+Enter for a new line"
       errorMessage={errorMessage}
-      clearLabel="Clear message"
+      variant="icon"
+      accent={toolAccents.conversation.fg}
     />
   );
 
   return (
     <ModuleShell
-      title="Conversation"
+      title="Chat"
+      icon={<ToolBadge icon="chat" fg={toolAccents.conversation.fg} bg={toolAccents.conversation.bg} />}
+      headerRight={<ModelPicker options={MODEL_OPTIONS} value={model} onChange={setModel} />}
       usage={usage}
       sidebarSlot={sidebarSlot}
+      sidebarWidth={272}
       contentSlot={contentSlot}
       promptSlot={promptSlot}
+      promptMaxWidth={720}
     />
   );
 }
